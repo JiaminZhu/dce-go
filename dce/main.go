@@ -307,7 +307,13 @@ func (exec *dockerComposeExecutor) LaunchTask(driver exec.ExecutorDriver, taskIn
 			cancel()
 			if pod.GetPodStatus() != types.POD_RUNNING {
 				pod.SendPodStatus(types.POD_RUNNING)
-				go monitor.MonitorPoller()
+				go func() {
+					status, err := monitor.MonitorPoller(ctx)
+					if err != nil {
+						log.Errorf("failure from monitor: %s", err)
+					}
+					pod.SendPodStatus(status)
+				}()
 			}
 		}
 		//For adhoc job, send finished to mesos if job already finished during init health check
